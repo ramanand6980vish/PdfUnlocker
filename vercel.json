@@ -1,11 +1,10 @@
 {
   "version": 2,
-  "functions": {
-    "api/unlock.py": {
-      "runtime": "python3.12"
-    }
-  },
+  "builds": [
+    { "src": "api/unlock.py", "use": "@vercel/python" }
+  ],
   "routes": [
-    { "src": "/(.*)", "dest": "/public/$1" }
+    { "src": "/api/(.*)", "dest": "/api/unlock.py" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
