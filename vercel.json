@@ -1,10 +1,13 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/unlock.py", "use": "@vercel/python" }
+    { "src": "api/unlock.py", "use": "@vercel/python" },
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "public/(.*)", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/unlock.py" },
+    { "src": "/public/(.*)", "dest": "/public/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
