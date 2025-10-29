@@ -1,69 +1,58 @@
-
-import os
-from io import BytesIO
 from flask import Flask, request, send_file, jsonify, send_from_directory
 from PyPDF2 import PdfReader, PdfWriter
+from io import BytesIO
+import os
 
-# Flask app instance
-app = Flask(__name__)
-
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-PUBLIC_DIR = os.path.join(PROJECT_ROOT, "public")
+app = Flask(__name__, static_folder="../public", static_url_path="")
 
 # ---------- FRONTEND ROUTES ----------
-
 @app.route("/")
 def index():
-    """Serve the main UI page"""
-    return send_from_directory(PUBLIC_DIR, "index.html")
+    """Serve main index.html"""
+    return send_from_directory(app.static_folder, "index.html")
 
 @app.route("/<path:filename>")
 def public_files(filename):
-    """Serve static frontend files (CSS, JS, etc.)"""
-    return send_from_directory(PUBLIC_DIR, filename)
+    """Serve static assets like CSS, JS"""
+    return send_from_directory(app.static_folder, filename)
 
 # ---------- BACKEND ROUTE ----------
-
 @app.route("/api/unlock", methods=["POST"])
 def unlock_pdf():
     if "file" not in request.files:
-        return jsonify({"error": "no file uploaded"}), 400
+        return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
     password = request.form.get("password", "")
 
-    in_bytes = file.read()
-    if not in_bytes:
-        return jsonify({"error": "empty file"}), 400
-
     try:
-        reader = PdfReader(BytesIO(in_bytes))
+        reader = PdfReader(file)
     except Exception:
-        return jsonify({"error": "invalid pdf"}), 400
+        return jsonify({"error": "Invalid or corrupted PDF"}), 400
 
     if reader.is_encrypted:
         try:
-            res = reader.decrypt(password)
-            if res in (0, False):
-                return jsonify({"error": "wrong password"}), 401
+            result = reader.decrypt(password)
+            if result == 0 or result is False:
+                return jsonify({"error": "Wrong password"}), 401
         except Exception:
-            return jsonify({"error": "wrong password"}), 401
+            return jsonify({"error": "Wrong password"}), 401
 
     writer = PdfWriter()
     for page in reader.pages:
         writer.add_page(page)
 
-    out_io = BytesIO()
-    writer.write(out_io)
-    out_io.seek(0)
+    output = BytesIO()
+    writer.write(output)
+    output.seek(0)
 
     return send_file(
-        out_io,
+        output,
         as_attachment=True,
-        download_name=f"unprotected_{file.filename}",
+        download_name=f"unlocked_{file.filename}",
         mimetype="application/pdf"
     )
 
-# ---------- MAIN ENTRY ----------
+# ---------- MAIN ----------
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
