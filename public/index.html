@@ -181,7 +181,7 @@
       formData.append("password", password);
 
       try {
-        const response = await fetch("/api/api/unlock", { method: "POST", body: formData });
+        const response = await fetch("/api/unlock", { method: "POST", body: formData });
 
         if (!response.ok) {
           const err = await response.json().catch(() => ({ error: "Unexpected error" }));
